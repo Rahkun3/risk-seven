@@ -98,6 +98,17 @@
     p.staging = null;
   }
 
+  const FX_WAIT = {
+    curtain: 1650,
+    special: 1050,
+    save: 1150,
+    bust: 1150,
+    seven: 2900,
+    freeze: 1100,
+    spareKeep: 1100,
+    tripleLand: 700,
+  };
+
   function collectInPlay(players) {
     const out = [];
     for (const p of players) {
@@ -174,6 +185,11 @@
       this.onUpdate(this.snapshot());
     }
 
+    pauseFor(kind) {
+      if (!this.animMs) return this.sleep(0);
+      return this.sleep(FX_WAIT[kind] != null ? FX_WAIT[kind] : this.animMs);
+    }
+
     pushLog(text, kind) {
       this.log.push({ text, kind: kind || "info", t: Date.now() });
       this.emit();
@@ -247,6 +263,7 @@
       this.players.forEach(resetRoundPlayer);
       this.log = [];
       this.pushLog(`Round ${this.round} begins.`, "round");
+      await this.pauseFor("curtain");
 
       const n = this.players.length;
       const start = (this.dealerIndex + 1) % n;
@@ -353,11 +370,9 @@
           }
         }
         this.emit();
-        if (player.hasSeven) {
-          await this.sleep(this.animMs ? 2900 : 0);
-        } else if (player.status === "busted") {
-          await this.sleep(this.animMs ? 1150 : 0);
-        }
+        if (player.hasSeven) await this.pauseFor("seven");
+        else if (player.status === "busted") await this.pauseFor("bust");
+        else if (player.secondChance === false && dup) await this.pauseFor("save");
         return;
       }
 
@@ -366,7 +381,7 @@
         player.modifiers.push(card);
         this.pushLog(`${who(player.name, "draws")} ${cards.cardLabel(card)}.`, "mod");
         this.emit();
-        await this.sleep(this.animMs ? 1050 : 0);
+        await this.pauseFor("special");
         return;
       }
 
@@ -399,7 +414,7 @@
         from.secondChance = true;
         this.pushLog(`${who(from.name, "keeps")} Spare.`, "info");
         this.emit();
-        await this.sleep(this.animMs ? 700 : 0);
+        await this.pauseFor("spareKeep");
         return;
       }
       const candidates = this.players.filter(
@@ -423,7 +438,7 @@
       target.secondChance = true;
       this.pushLog(`${who(from.name, "passes")} Spare to ${target.name}.`, "action");
       this.emit();
-      await this.sleep(this.animMs ? 1100 : 0);
+      await this.pauseFor("special");
     }
 
     freezeTargets() {
@@ -451,7 +466,14 @@
 
     async chooseTarget(from, card, candidates) {
       if (!candidates.length) return null;
-      if (candidates.length === 1 && (from.kind !== "human" || card.kind === "freeze")) {
+      if (
+        candidates.length === 1 &&
+        card.kind === "freeze" &&
+        (from.kind !== "human" || candidates[0].id === from.id)
+      ) {
+        return candidates[0];
+      }
+      if (candidates.length === 1 && from.kind !== "human" && card.kind !== "draw3") {
         return candidates[0];
       }
       for (;;) {
@@ -496,7 +518,7 @@
         const aim = from.id === target.id ? "themselves" : target.name;
         this.pushLog(`${who(from.name, "freezes")} ${aim} with ${n} points.`, "freeze");
         this.emit();
-        await this.sleep(this.animMs ? 1100 : 0);
+        await this.pauseFor("freeze");
         this.clearReceived(target, "freeze");
         this.emit();
         return;
@@ -507,6 +529,7 @@
         const aim = from.id === target.id ? "themselves" : target.name;
         this.pushLog(`${who(from.name, "plays")} Triple on ${aim}.`, "draw3");
         this.emit();
+        await this.pauseFor("tripleLand");
         await this.doDraw3(target);
         this.clearReceived(target, "draw3");
         this.emit();
@@ -598,10 +621,11 @@
 
   RiskSeven.PERSONAS = PERSONAS;
   RiskSeven.Game = Game;
+  RiskSeven.FX_WAIT = FX_WAIT;
   RiskSeven.makePlayer = makePlayer;
   RiskSeven.collectInPlay = collectInPlay;
 
   if (typeof module !== "undefined") {
-    module.exports = { Game, PERSONAS, makePlayer, collectInPlay };
+    module.exports = { Game, PERSONAS, FX_WAIT, makePlayer, collectInPlay };
   }
 })(typeof globalThis !== "undefined" ? globalThis : this);

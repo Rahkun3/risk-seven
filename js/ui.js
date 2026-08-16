@@ -669,8 +669,10 @@
   function wait(kind) {
     return new Promise((resolve) => {
       state.waiter = { kind, resolve };
-      if (kind === "target" && state.snap) showAssign(state.snap);
-      else hideAssign();
+      if (kind === "target" && state.snap) {
+        showAssign(state.snap);
+        renderTable(state.snap);
+      } else hideAssign();
       updateActions();
     });
   }
@@ -758,8 +760,22 @@
     el.textContent = lines.join("\n");
   }
 
-  function pickTarget(id) {
+  function fxWait(kind) {
+    const table = RiskSeven.FX_WAIT || {};
+    if (table[kind] != null) return table[kind];
+    return 1000;
+  }
+
+  function overlayBlocksSeats() {
+    const curtain = $("round-curtain");
+    if (curtain && !curtain.hidden) return true;
+    const fx = $("fx");
+    return !!(fx && fx.classList.contains("show"));
+  }
+
+  function pickTarget(id, fromBar) {
     if (!state.waiter || state.waiter.kind !== "target") return;
+    if (!fromBar && overlayBlocksSeats()) return;
     finishWait(id);
   }
 
@@ -802,7 +818,7 @@
       btn.type = "button";
       btn.className = "assign-btn" + (p.id === state.myId ? " me" : "");
       btn.innerHTML = `<img src="${p.portrait}" alt=""><span>${esc(p.name)}${p.id === state.myId ? " (you)" : ""}</span><small>${idx + 1}</small>`;
-      btn.addEventListener("click", () => pickTarget(p.id));
+      btn.addEventListener("click", () => pickTarget(p.id, true));
       box.appendChild(btn);
     });
     bar.hidden = false;
@@ -951,7 +967,7 @@
         el.classList.add("on");
       });
     });
-    holdFx(1600);
+    holdFx(fxWait("curtain"));
     RiskSeven.sfx.newRound();
     el._hide = setTimeout(() => {
       el.classList.remove("on");
@@ -1091,8 +1107,8 @@
     if (fx) {
       $("fx-name").textContent = "RESHUFFLE";
       $("fx-who").textContent = "The discard returns to the deck";
-      holdFx(1100);
-      closeFx(fx, 1100);
+      holdFx(fxWait("special"));
+      closeFx(fx, fxWait("special"));
     }
     document.querySelectorAll(".pile .stack").forEach((el) => {
       el.classList.remove("shuffling");
@@ -1137,8 +1153,8 @@
       void el.offsetWidth;
       el.classList.add("burst");
     }
-    holdFx(1000);
-    closeFx(fx, 950);
+    holdFx(fxWait("special"));
+    closeFx(fx, fxWait("special"));
   }
 
   function maybeFlashSeven(prev, snap) {
@@ -1184,12 +1200,15 @@
       void seat.offsetWidth;
       seat.classList.add("seven-flash");
     }
-    holdFx(2900);
-    closeFx(fx, 2800);
+    holdFx(fxWait("seven"));
+    closeFx(fx, fxWait("seven"));
   }
 
   function maybeFlashSave(prev, snap) {
     if (!prev) return;
+    if (snap.phase === "dealing" || snap.phase === "roundEnd" || snap.phase === "idle") return;
+    const last = snap.log && snap.log[snap.log.length - 1];
+    if (!last || last.kind !== "save") return;
     snap.players.forEach((p) => {
       const before = prev.players.find((x) => x.id === p.id);
       if (before && before.secondChance && !p.secondChance && p.status === "active" && !p.hasSeven) {
@@ -1226,8 +1245,8 @@
       clearTimeout(seat._saveT);
       seat._saveT = setTimeout(() => seat.classList.remove("save-flash"), 1100);
     }
-    holdFx(1150);
-    closeFx(fx, 1100);
+    holdFx(fxWait("save"));
+    closeFx(fx, fxWait("save"));
   }
 
   function maybeFlashBust(prev, snap) {
@@ -1266,8 +1285,8 @@
       void seat.offsetWidth;
       seat.classList.add("busted-flash");
     }
-    holdFx(1150);
-    closeFx(fx, 1100);
+    holdFx(fxWait("bust"));
+    closeFx(fx, fxWait("bust"));
   }
 
   function playersAround(players, myId) {
@@ -1511,9 +1530,10 @@
       snap.prompt.kind === "hitStay" &&
       snap.prompt.playerId === state.myId &&
       state.onlineRole !== "spectate";
-    $("hit").disabled = !myTurn;
-    $("stay").disabled = !myTurn;
-    $("dock").style.visibility = myTurn ? "visible" : "hidden";
+    const fxUp = !!(state.fxUntil && Date.now() < state.fxUntil);
+    $("hit").disabled = !myTurn || fxUp;
+    $("stay").disabled = !myTurn || fxUp;
+    $("dock").style.visibility = myTurn && !fxUp ? "visible" : "hidden";
   }
 
   function paintLog(snap) {

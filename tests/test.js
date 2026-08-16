@@ -664,6 +664,100 @@ async function main() {
     assert.strictEqual(view.seats.length, 4);
   });
 
+  await test("opening Triple waits for the human to pick a target", async () => {
+    let asked = 0;
+    const game = new Game({
+      players: [
+        { id: "rex", name: "Rex", kind: "ai", persona: "rex" },
+        { id: "you", name: "You", kind: "human" },
+      ],
+      goal: 999,
+      deck: padDeck([act("draw3"), n(1), n(2), n(3), n(4)]),
+      rng: cards.mulberry32(3),
+      animMs: 0,
+      sleep: async () => {},
+      askHitStay: async () => "stay",
+      askTarget: async (_s, p, card) => {
+        if (card.kind === "draw3" && p.id === "you") {
+          asked += 1;
+          return "rex";
+        }
+        return p.id;
+      },
+      ackRoundEnd: async () => game.stop(),
+    });
+    await game.playMatch();
+    assert.ok(asked >= 1, "opening Triple must wait for a human target");
+  });
+
+  await test("human Triple still asks when only the drawer is left", async () => {
+    let asked = 0;
+    const game = new Game({
+      players: players2(),
+      goal: 999,
+      deck: padDeck([n(9), n(10), act("draw3"), n(1), n(2), n(3)]),
+      rng: cards.mulberry32(3),
+      animMs: 0,
+      sleep: async () => {},
+      askHitStay: async (_s, p) => (p.id === "rex" ? "stay" : "hit"),
+      askTarget: async (_s, p, card) => {
+        if (card.kind === "draw3") asked += 1;
+        return p.id;
+      },
+      ackRoundEnd: async () => game.stop(),
+    });
+    await game.playMatch();
+    assert.ok(asked >= 1, "human must still assign Triple to themselves");
+  });
+
+  await test("unused Spare at round end does not log a save", async () => {
+    const kinds = [];
+    let spareAtEnd = false;
+    const game = new Game({
+      players: players2(),
+      goal: 999,
+      deck: padDeck([act("secondChance"), n(4)]),
+      rng: cards.mulberry32(3),
+      animMs: 0,
+      sleep: async () => {},
+      onUpdate: (snap) => {
+        snap.log.forEach((l) => kinds.push(l.kind));
+        if (snap.phase === "roundEnd") {
+          spareAtEnd = snap.players.some((p) => p.secondChance);
+        }
+      },
+      askHitStay: async () => "stay",
+      askTarget: async (_s, p, _c, cands) => cands[0].id,
+      ackRoundEnd: async () => game.stop(),
+    });
+    await game.playMatch();
+    assert.ok(spareAtEnd, "Spare should still be held when the round is scored");
+    assert.ok(!kinds.includes("save"), "round end must not play a Spare save");
+  });
+
+  await test("round banner finishes before the first card is revealed", async () => {
+    let beforeReveal = 0;
+    let revealed = false;
+    const game = new Game({
+      players: players2(),
+      goal: 999,
+      deck: padDeck([n(2), n(3)]),
+      rng: cards.mulberry32(3),
+      animMs: 1200,
+      sleep: async (ms) => {
+        if (!revealed) beforeReveal += ms;
+      },
+      onUpdate: (snap) => {
+        if (snap.phase === "reveal") revealed = true;
+      },
+      askHitStay: async () => "stay",
+      askTarget: async (_s, p, _c, cands) => cands[0].id,
+      ackRoundEnd: async () => game.stop(),
+    });
+    await game.playMatch();
+    assert.ok(beforeReveal >= 1650, "dealing should wait for the round banner");
+  });
+
   await test("a round emits the dealing phase only once", async () => {
     const phases = [];
     const game = new Game({

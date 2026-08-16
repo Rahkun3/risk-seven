@@ -986,6 +986,10 @@ button, input, select { font-family: inherit; }
   transition: opacity 0.35s ease;
 }
 #round-curtain[hidden] { display: none; }
+#round-curtain.on,
+#round-curtain.out {
+  pointer-events: auto;
+}
 #round-curtain.on { opacity: 1; }
 #round-curtain.out { opacity: 0; }
 .curtain-kicker {

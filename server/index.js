@@ -387,6 +387,10 @@ function waitClient(room, clientId, kind) {
 
 async function startMatch(room) {
   if (room.playing) return;
+  if (room.pending) {
+    clearTimeout(room.pending.timer);
+    room.pending = null;
+  }
   T.promoteWatchers(room);
   if (!T.humansOf(room).length) return;
   T.fillAi(room);
@@ -422,7 +426,7 @@ async function startMatch(room) {
       }
       const picked = await waitClient(room, player.id, "target");
       if (picked && candidates.some((c) => c.id === picked)) return picked;
-      return player.id;
+      return null;
     },
     ackRoundEnd: async (snap) => {
       const max = Math.max(...snap.players.map((p) => p.totalScore));
