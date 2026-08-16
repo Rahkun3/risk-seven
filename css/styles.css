@@ -870,8 +870,9 @@ button, input, select { font-family: inherit; }
 #fx .wash {
   position: absolute;
   inset: 0;
-  animation: fx-wash 0.9s ease;
+  opacity: 0;
 }
+#fx.show.play .wash { animation: fx-wash 0.9s ease forwards; }
 #fx.kind-freeze .wash { background: radial-gradient(circle at 50% 45%, rgba(143, 214, 239, 0.55), transparent 62%); }
 #fx.kind-draw3 .wash { background: radial-gradient(circle at 50% 45%, rgba(255, 122, 60, 0.55), transparent 62%); }
 #fx.kind-secondChance .wash,
@@ -889,9 +890,9 @@ button, input, select { font-family: inherit; }
   background:
     radial-gradient(circle at 50% 42%, rgba(255, 236, 170, 0.75), transparent 58%),
     radial-gradient(circle at 30% 30%, rgba(228, 195, 106, 0.35), transparent 40%);
-  animation: fx-wash 2.4s ease;
 }
-#fx.kind-seven .fx-title { animation: seven-pop 2.4s ease; }
+#fx.show.play.kind-seven .wash { animation: fx-wash 2.4s ease forwards; }
+#fx.show.play.kind-seven .fx-title { animation: seven-pop 2.4s ease forwards; }
 #fx.kind-seven .fx-title b {
   font-size: clamp(64px, 12vw, 120px);
   background: linear-gradient(180deg, #fff8dc, #e4c36a 55%, #b8892e);
@@ -916,8 +917,9 @@ button, input, select { font-family: inherit; }
   transform: translate(-50%, -50%);
   text-align: center;
   text-shadow: 0 8px 28px rgba(0,0,0,0.55);
-  animation: fx-pop 0.85s ease;
+  opacity: 0;
 }
+#fx.show.play .fx-title { animation: fx-pop 0.85s ease forwards; }
 #fx .fx-title b {
   display: block;
   font-family: var(--display);
@@ -981,9 +983,11 @@ button, input, select { font-family: inherit; }
   background: rgba(4, 12, 9, 0.72);
   pointer-events: none;
   opacity: 0;
+  transition: opacity 0.35s ease;
 }
 #round-curtain[hidden] { display: none; }
-#round-curtain.show { animation: curtain-in 1.8s ease forwards; }
+#round-curtain.on { opacity: 1; }
+#round-curtain.out { opacity: 0; }
 .curtain-kicker {
   position: absolute;
   top: 38%;
@@ -999,12 +1003,6 @@ button, input, select { font-family: inherit; }
   font-size: clamp(48px, 10vw, 92px);
   color: var(--gold);
   letter-spacing: -0.03em;
-}
-@keyframes curtain-in {
-  0% { opacity: 0; }
-  8% { opacity: 1; }
-  82% { opacity: 1; }
-  100% { opacity: 0; }
 }
 @keyframes bust-shake {
   0%, 100% { transform: translate(0, 0); }

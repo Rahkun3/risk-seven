@@ -596,7 +596,12 @@ async function serve(req, res) {
       res.end("Not found");
       return;
     }
-    res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream" });
+    const ext = path.extname(file);
+    const headers = { "Content-Type": TYPES[ext] || "application/octet-stream" };
+    if (ext === ".html" || ext === ".js" || ext === ".css") {
+      headers["Cache-Control"] = "no-cache";
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 }

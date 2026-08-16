@@ -664,6 +664,27 @@ async function main() {
     assert.strictEqual(view.seats.length, 4);
   });
 
+  await test("a round emits the dealing phase only once", async () => {
+    const phases = [];
+    const game = new Game({
+      players: players2(),
+      goal: 999,
+      deck: padDeck([n(2), n(3), n(4), n(5)]),
+      rng: cards.mulberry32(8),
+      animMs: 0,
+      sleep: async () => {},
+      onUpdate: (snap) => {
+        if (snap.phase === "dealing") phases.push(snap.round);
+      },
+      askHitStay: async () => "stay",
+      askTarget: async (_s, p, _c, cands) => cands[0].id,
+      ackRoundEnd: async () => game.stop(),
+    });
+    await game.playMatch();
+    const dealing = phases.filter((r) => r === 1);
+    assert.strictEqual(dealing.length, 1);
+  });
+
   if (process.exitCode) {
     console.log("\nSome tests failed.");
   } else {

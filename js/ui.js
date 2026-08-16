@@ -8,8 +8,7 @@
     lastLog: 0,
     lastFx: null,
     seenFx: {},
-    lastCurtain: 0,
-    curtainBusy: 0,
+    matchGen: 0,
     debug: false,
     mode: "local",
     myId: "you",
@@ -472,16 +471,18 @@
   }
 
   function enterOnlineTable() {
+    const already = $("table").classList.contains("show");
     $("lobby").classList.remove("show");
     $("online-panel").classList.remove("show");
     $("menu").classList.add("hidden");
     $("table").classList.add("show");
     $("round-end").classList.remove("show");
     $("winner").classList.remove("show");
-    $("seats").innerHTML = "";
-    $("log").innerHTML = "";
+    if (!already) {
+      $("seats").innerHTML = "";
+      $("log").innerHTML = "";
+    }
     hideAssign();
-    resetFxMemory();
     unlockAudio();
     RiskSeven.music.enterTable();
     syncMusicUi();
@@ -555,6 +556,7 @@
         wait.textContent = "";
       }
       state.onlineRole = "player";
+      startFxMatch();
       enterOnlineTable();
     });
     RiskSeven.net.on("snap", (msg) => {
@@ -897,7 +899,7 @@
     });
 
     state.game = game;
-    resetFxMemory();
+    startFxMatch();
     game.playMatch()
       .then(() => {
         if (game.winners.length) showWinner();
@@ -918,22 +920,44 @@
     el._t = setTimeout(() => el.classList.remove("show"), 4200);
   }
 
-  async function showRoundCurtain(round) {
+  function fxKey(part) {
+    return (state.matchGen || 0) + ":" + part;
+  }
+
+  function hideCurtain() {
     const el = $("round-curtain");
-    if (!el || state.curtainBusy === round) return;
-    state.curtainBusy = round;
-    $("curtain-label").textContent = `Round ${round}`;
-    el.classList.remove("show");
-    el.hidden = false;
-    void el.offsetWidth;
-    el.classList.add("show");
-    holdFx(1800);
-    RiskSeven.sfx.newRound();
-    await sleep(1800);
-    if (state.curtainBusy !== round) return;
-    el.classList.remove("show");
+    if (!el) return;
+    clearTimeout(el._hide);
+    el._hide = null;
+    el.classList.remove("on", "out");
     el.hidden = true;
-    state.curtainBusy = 0;
+  }
+
+  function showRoundCurtain(round) {
+    const el = $("round-curtain");
+    if (!el || fxSeen(fxKey("curtain:" + round))) return;
+    $("curtain-label").textContent = `Round ${round}`;
+    clearTimeout(el._hide);
+    el.classList.remove("on", "out");
+    el.hidden = false;
+    el.style.transition = "none";
+    el.style.opacity = "0";
+    void el.offsetWidth;
+    el.style.transition = "";
+    el.style.opacity = "";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (el.hidden) return;
+        el.classList.add("on");
+      });
+    });
+    holdFx(1600);
+    RiskSeven.sfx.newRound();
+    el._hide = setTimeout(() => {
+      el.classList.remove("on");
+      el.classList.add("out");
+      el._hide = setTimeout(hideCurtain, 360);
+    }, 1240);
   }
 
   function sleep(ms) {
@@ -942,8 +966,6 @@
 
   function resetFxMemory() {
     state.seenFx = {};
-    state.lastCurtain = 0;
-    state.curtainBusy = 0;
     state.lastFx = null;
     state.heldSnap = null;
     state.fxUntil = 0;
@@ -951,6 +973,18 @@
       clearTimeout(state.fxFlush);
       state.fxFlush = null;
     }
+    hideCurtain();
+    const fx = $("fx");
+    if (fx) {
+      clearTimeout(fx._t);
+      fx.className = "";
+      fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
+    }
+  }
+
+  function startFxMatch() {
+    state.matchGen = (state.matchGen || 0) + 1;
+    resetFxMemory();
   }
 
   function fxSeen(key) {
@@ -986,7 +1020,6 @@
 
   function applySnap(snap) {
     const prev = state.snap;
-    const prevRound = prev && prev.round;
     state.snap = snap;
     renderTable(snap);
     if (state.waiter && state.waiter.kind === "target") showAssign(snap);
@@ -1000,36 +1033,66 @@
     if (snap.log.length && snap.log[snap.log.length - 1].t !== state.lastLog) {
       const last = snap.log[snap.log.length - 1];
       state.lastLog = last.t;
-      if (last.kind === "freeze") RiskSeven.sfx.freeze();
-      if (last.kind === "win") RiskSeven.sfx.win();
-      if (last.kind === "shuffle" && !fxSeen("shuffle:" + last.t)) flashShuffle();
+      if (last.kind === "freeze" && !fxSeen(fxKey("sfx-freeze:" + last.t))) RiskSeven.sfx.freeze();
+      if (last.kind === "win" && !fxSeen(fxKey("sfx-win:" + last.t))) RiskSeven.sfx.win();
+      if (last.kind === "shuffle" && !fxSeen(fxKey("shuffle:" + last.t))) flashShuffle();
     }
     maybeFlashSpecial(snap);
     maybeFlashBust(prev, snap);
     maybeFlashSeven(prev, snap);
     maybeFlashSave(prev, snap);
-    if (snap.round && snap.round !== prevRound && snap.phase === "dealing" && state.lastCurtain !== snap.round) {
-      state.lastCurtain = snap.round;
-      showRoundCurtain(snap.round);
-    }
+    if (snap.round && snap.phase === "dealing") showRoundCurtain(snap.round);
     if (snap.phase === "roundEnd") showRoundEnd();
     else $("round-end").classList.remove("show");
     wireOnlinePrompt(snap);
   }
 
+  function restartFxMotion(fx) {
+    const bits = [fx.querySelector(".wash"), fx.querySelector(".fx-title")];
+    bits.forEach((el) => {
+      if (!el) return;
+      el.style.animation = "none";
+    });
+    fx.classList.remove("play");
+    void fx.offsetWidth;
+    bits.forEach((el) => {
+      if (!el) return;
+      el.style.animation = "";
+    });
+    fx.classList.add("play");
+  }
+
+  function openFx(kind) {
+    const fx = $("fx");
+    if (!fx) return null;
+    fx.className = "show kind-" + kind;
+    fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
+    restartFxMotion(fx);
+    return fx;
+  }
+
+  function closeFx(fx, ms) {
+    if (!fx) return;
+    clearTimeout(fx._t);
+    fx._t = setTimeout(() => {
+      fx.classList.remove("play");
+      const wash = fx.querySelector(".wash");
+      const title = fx.querySelector(".fx-title");
+      if (wash) wash.style.animation = "none";
+      if (title) title.style.animation = "none";
+      fx.className = "";
+      fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
+    }, ms);
+  }
+
   function flashShuffle() {
     RiskSeven.sfx.shuffle();
-    const fx = $("fx");
+    const fx = openFx("shuffle");
     if (fx) {
-      fx.className = "show kind-shuffle";
       $("fx-name").textContent = "RESHUFFLE";
       $("fx-who").textContent = "The discard returns to the deck";
-      fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
-      clearTimeout(fx._t);
       holdFx(1100);
-      fx._t = setTimeout(() => {
-        fx.className = "";
-      }, 1100);
+      closeFx(fx, 1100);
     }
     document.querySelectorAll(".pile .stack").forEach((el) => {
       el.classList.remove("shuffling");
@@ -1044,19 +1107,17 @@
     if (!holder || !holder.staging) return;
     const card = holder.staging;
     if (card.type !== "action" && card.type !== "modifier") return;
-    const key = `${snap.round}:${holder.id}:${card.id}`;
+    const key = fxKey(`${snap.round}:${holder.id}:${card.id}`);
     if (fxSeen(key)) return;
     flashSpecial(holder, card);
   }
 
   function flashSpecial(player, card) {
-    const fx = $("fx");
-    if (!fx) return;
     const kind = card.kind || card.type;
-    fx.className = "show kind-" + kind;
+    const fx = openFx(kind);
+    if (!fx) return;
     $("fx-name").textContent = RiskSeven.cards.cardLabel(card);
     $("fx-who").textContent = player.name;
-    fx.querySelectorAll(".spark").forEach((s) => s.remove());
     for (let i = 0; i < 18; i++) {
       const spark = document.createElement("div");
       spark.className = "spark";
@@ -1076,12 +1137,8 @@
       void el.offsetWidth;
       el.classList.add("burst");
     }
-    clearTimeout(fx._t);
     holdFx(1000);
-    fx._t = setTimeout(() => {
-      fx.className = "";
-      fx.querySelectorAll(".spark").forEach((s) => s.remove());
-    }, 950);
+    closeFx(fx, 950);
   }
 
   function maybeFlashSeven(prev, snap) {
@@ -1092,14 +1149,12 @@
   }
 
   function flashSeven(player) {
-    const fx = $("fx");
-    if (!fx) return;
-    const key = `seven:${state.snap.round}:${player.id}`;
+    const key = fxKey(`seven:${state.snap.round}:${player.id}`);
     if (fxSeen(key)) return;
-    fx.className = "show kind-seven";
+    const fx = openFx("seven");
+    if (!fx) return;
     $("fx-name").textContent = "SEVEN";
     $("fx-who").textContent = `${player.name}  ·  +15`;
-    fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
     for (let i = 0; i < 48; i++) {
       const spark = document.createElement("div");
       spark.className = "spark";
@@ -1130,11 +1185,7 @@
       seat.classList.add("seven-flash");
     }
     holdFx(2900);
-    clearTimeout(fx._t);
-    fx._t = setTimeout(() => {
-      fx.className = "";
-      fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
-    }, 2800);
+    closeFx(fx, 2800);
   }
 
   function maybeFlashSave(prev, snap) {
@@ -1148,14 +1199,12 @@
   }
 
   function flashSave(player) {
-    const fx = $("fx");
-    if (!fx) return;
-    const key = `save:${state.snap.round}:${player.id}:${state.snap.log.length}`;
+    const key = fxKey(`save:${state.snap.round}:${player.id}`);
     if (fxSeen(key)) return;
-    fx.className = "show kind-secondChance kind-save";
+    const fx = openFx("secondChance kind-save");
+    if (!fx) return;
     $("fx-name").textContent = "SAVED";
     $("fx-who").textContent = `${player.name} · Spare`;
-    fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
     for (let i = 0; i < 24; i++) {
       const spark = document.createElement("div");
       spark.className = "spark";
@@ -1178,11 +1227,7 @@
       seat._saveT = setTimeout(() => seat.classList.remove("save-flash"), 1100);
     }
     holdFx(1150);
-    clearTimeout(fx._t);
-    fx._t = setTimeout(() => {
-      fx.className = "";
-      fx.querySelectorAll(".spark, .confetti").forEach((s) => s.remove());
-    }, 1100);
+    closeFx(fx, 1100);
   }
 
   function maybeFlashBust(prev, snap) {
@@ -1196,14 +1241,12 @@
   }
 
   function flashBust(player) {
-    const fx = $("fx");
-    if (!fx) return;
-    const key = `bust:${state.snap.round}:${player.id}`;
+    const key = fxKey(`bust:${state.snap.round}:${player.id}`);
     if (fxSeen(key)) return;
-    fx.className = "show kind-bust";
+    const fx = openFx("bust");
+    if (!fx) return;
     $("fx-name").textContent = "BUST";
     $("fx-who").textContent = player.name;
-    fx.querySelectorAll(".spark").forEach((s) => s.remove());
     for (let i = 0; i < 22; i++) {
       const spark = document.createElement("div");
       spark.className = "spark";
@@ -1224,11 +1267,7 @@
       seat.classList.add("busted-flash");
     }
     holdFx(1150);
-    clearTimeout(fx._t);
-    fx._t = setTimeout(() => {
-      fx.className = "";
-      fx.querySelectorAll(".spark").forEach((s) => s.remove());
-    }, 1100);
+    closeFx(fx, 1100);
   }
 
   function playersAround(players, myId) {
