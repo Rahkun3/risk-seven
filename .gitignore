@@ -1,0 +1,7 @@
+node_modules/
+.bin/
+.public-url
+.DS_Store
+*.log
+.env
+.env.*

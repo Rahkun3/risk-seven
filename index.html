@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Risk Seven</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="boot">
+    <div class="boot-mark">Risk Seven</div>
+    <div class="boot-spin"></div>
+    <div class="boot-copy">Setting the table…</div>
+  </div>
+  <div id="app">
+    <section id="menu">
+      <div class="menu-card">
+        <div class="brand">
+          <h1>Risk Seven</h1>
+          <p>Hit · Stay · Don't bust</p>
+        </div>
+
+        <div class="field">
+          <label for="player-name">Your name</label>
+          <input id="player-name" type="text" maxlength="16" value="You" autocomplete="nickname" />
+        </div>
+
+        <div class="field">
+          <label>Your look</label>
+          <div class="avatar-pick" id="avatar-pick"></div>
+        </div>
+
+        <div class="settings-bar">
+          <div class="field field-compact">
+            <label>Difficulty</label>
+            <div class="pills pills-sm">
+              <button class="pill" data-group="difficulty" data-value="easy">Easy</button>
+              <button class="pill active" data-group="difficulty" data-value="normal">Normal</button>
+              <button class="pill" data-group="difficulty" data-value="sharp">Sharp</button>
+            </div>
+            <p class="diff-help" id="diff-help">Normal — AI plays a fair, mixed game.</p>
+          </div>
+          <div class="field field-compact music-field">
+            <label>Music</label>
+            <button type="button" class="toggle" id="music-toggle" role="switch" aria-checked="false">
+              <span class="toggle-track"><span class="toggle-knob"></span></span>
+              <span class="toggle-label">Off</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="menu-actions">
+          <button class="play-btn" id="play">Play alone</button>
+          <button class="play-btn" id="play-online">Play with people</button>
+          <button class="how-btn" id="how">How to play</button>
+        </div>
+        <div class="rivals" id="rivals"></div>
+        <p class="fineprint">First to 200.</p>
+      </div>
+    </section>
+
+    <section id="table">
+      <header class="topbar">
+        <h1 class="mark">Risk Seven</h1>
+        <div class="top-actions">
+          <span id="round-label" class="round-tag">Round 1</span>
+          <button type="button" class="toggle toggle-sm" id="btn-music" role="switch" aria-checked="false" title="Music">
+            <span class="toggle-track"><span class="toggle-knob"></span></span>
+            <span class="toggle-label">Music</span>
+          </button>
+          <button type="button" class="toggle toggle-sm on" id="btn-sfx" role="switch" aria-checked="true" title="Sound">
+            <span class="toggle-track"><span class="toggle-knob"></span></span>
+            <span class="toggle-label">Sound</span>
+          </button>
+          <button class="icon-btn" id="btn-rules">Rules</button>
+          <button class="icon-btn" id="btn-quit">Quit</button>
+        </div>
+      </header>
+
+      <div class="felt">
+        <div id="seats"></div>
+        <div class="center">
+          <div class="pile">
+            <div class="stack"><span class="back-word">Risk</span><span class="back-seven">7</span><span class="back-word">Seven</span></div>
+            <div class="lbl" id="deck-count">94 left</div>
+          </div>
+          <div class="pile discard">
+            <div class="stack"><span class="back-word">Risk</span><span class="back-seven">7</span><span class="back-word">Seven</span></div>
+            <div class="lbl" id="discard-count">0 discard</div>
+          </div>
+        </div>
+        <div id="fx" aria-hidden="true">
+          <div class="wash"></div>
+          <div class="fx-title"><b id="fx-name"></b><span id="fx-who"></span></div>
+        </div>
+        <div class="prompt-banner" id="watch-banner" hidden>Watching — you sit when this match ends</div>
+        <div class="prompt-banner" id="net-banner" hidden>Reconnecting to the table…</div>
+        <div class="prompt-banner" id="table-notice" hidden></div>
+        <button type="button" class="prompt-banner sound-gate" id="sound-gate" hidden>Tap to hear the table</button>
+        <div class="prompt-banner" id="banner" hidden></div>
+        <div id="assign-bar" hidden>
+          <div id="assign-card-slot"></div>
+          <div class="assign-copy">
+            <h2 id="assign-title">Play on…</h2>
+            <p id="assign-hint">Click a player, including yourself.</p>
+          </div>
+          <div id="assign-targets"></div>
+        </div>
+        <div id="round-curtain" hidden>
+          <div class="curtain-kicker">Now dealing</div>
+          <div class="curtain-label" id="curtain-label">Round 2</div>
+        </div>
+        <div class="lograil" id="log"></div>
+        <div class="dock" id="dock" style="visibility:hidden">
+          <button class="hit-btn" id="hit" disabled>Hit · H</button>
+          <button class="stay-btn" id="stay" disabled>Stay · S</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="overlay" id="online-panel">
+      <div class="panel">
+        <h2>Play with people</h2>
+        <p class="online-lead">Host a table and share the code, or join someone else’s table. If a hand is already going, you watch and sit next game.</p>
+        <div class="menu-actions">
+          <button class="play-btn" id="btn-create-table">Host a table</button>
+        </div>
+        <div class="field">
+          <label for="join-code">Join with a code</label>
+          <div class="join-row">
+            <input id="join-code" type="text" maxlength="6" placeholder="ABC12" autocomplete="off" />
+            <button class="play-btn" id="btn-join-code">Join table</button>
+          </div>
+        </div>
+        <p class="online-err" id="online-err" hidden></p>
+        <button class="ghost-btn" id="btn-online-back">Back</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="lobby">
+      <div class="panel">
+        <h2 id="lobby-title">Table</h2>
+        <div class="lobby-invite">
+          <p class="lobby-code-line">Table code</p>
+          <b id="lobby-code">————</b>
+          <button type="button" class="play-btn" id="btn-copy-code">Copy code</button>
+        </div>
+        <p class="roster-note" id="lobby-fill-note">Empty seats will be filled with AI when you deal.</p>
+        <p class="roster-note" id="lobby-notice"></p>
+        <div id="lobby-seats" class="lobby-seats"></div>
+        <p id="lobby-watch" class="roster-note"></p>
+        <div class="menu-actions">
+          <button class="play-btn" id="btn-lobby-start">Deal</button>
+          <button class="how-btn" id="btn-lobby-leave">Leave</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="rules">
+      <div class="panel rules">
+        <h2>How to play Risk Seven</h2>
+        <p>Be first to 200 points. Each hand you collect number cards with different values. Draw the same number twice and that hand scores nothing. Collect seven different numbers in one hand and the hand ends: you take your total plus 15 extra points.</p>
+        <h3>Your choice</h3>
+        <p>Each hand starts with one card each. Then, in order, you either <b>hit</b> (take one more card) or <b>stay</b> (keep this hand’s points). The hand ends when nobody is still hitting, or when someone reaches seven different numbers.</p>
+        <h3>What’s in the pile</h3>
+        <p>Number cards from 0 to 12. There is one 0, one 1, two 2s, and so on up to twelve 12s. Mixed in: three Lock cards, three Triple cards, three Spare cards, and one each of +2, +4, +6, +8, +10, and ×2.</p>
+        <h3>How points add up</h3>
+        <p>Add the numbers in your line. If you have ×2, double that sum. Then add any + cards. Then add 15 if you made seven. A busted hand is zero. If two or more people cross 200 in the same hand and share the top total, keep playing hands until one person leads.</p>
+        <h3>Action cards</h3>
+        <ul>
+          <li><b>Lock</b> — hand it to anyone still in (including you). They bank what they have and sit out the rest of the hand.</li>
+          <li><b>Triple</b> — that person must take the next three cards, one by one. Stop early on a bust or a seven. A Spare found in those three is handed out at once. A Lock or Triple found in those three is set aside and handed out only after the three cards are finished (and only if that person did not bust or hit seven).</li>
+          <li><b>Spare</b> — keep it if you do not already have one. The next matching number is thrown away instead of busting you. Only one Spare at a time; a second copy goes to someone else who is still in.</li>
+        </ul>
+        <p>Whoever draws Lock or Triple chooses the recipient. If you draw Lock and you are the only person still in, it banks you and the hand ends. If you draw Triple and you are the only person still in, it has to land on you.</p>
+        <p>Keys: <b>H</b> hit, <b>S</b> stay, <b>1–7</b> pick someone. The next hand starts on its own after the scoreboard.</p>
+        <button class="continue-btn" id="close-rules">Got it</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="round-end">
+      <div class="panel">
+        <h2 id="round-title">Round</h2>
+        <div class="results" id="round-results"></div>
+        <p class="round-next">Next hand in a moment</p>
+        <button class="continue-btn" id="continue" hidden>Start next round</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="winner">
+      <div id="win-fx"></div>
+      <div class="panel win-hero">
+        <img id="win-pic" alt="" />
+        <h2 id="win-title">Wins</h2>
+        <p id="win-sub"></p>
+        <p id="win-wait" class="roster-note" hidden></p>
+        <button class="continue-btn" id="again">Play again</button>
+        <button class="ghost-btn" id="to-menu">Leave table</button>
+      </div>
+    </div>
+    <pre id="debug-deck" hidden></pre>
+  </div>
+
+  <script src="js/cards.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/looks.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sfx.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/net.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "risk-seven",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node tests/test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

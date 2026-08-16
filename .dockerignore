@@ -1,0 +1,17 @@
+node_modules
+.git
+.github
+.bin
+.public-url
+.DS_Store
+*.log
+.env
+.env.*
+tests
+tools
+start.sh
+README.md
+.dockerignore
+.gitignore
+Dockerfile
+compose.yml
