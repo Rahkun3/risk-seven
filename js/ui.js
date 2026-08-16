@@ -7,6 +7,8 @@
     waiter: null,
     lastLog: 0,
     lastFx: null,
+    seenFx: {},
+    lastCurtain: 0,
     debug: false,
     mode: "local",
     myId: "you",
@@ -478,6 +480,7 @@
     $("seats").innerHTML = "";
     $("log").innerHTML = "";
     hideAssign();
+    resetFxMemory();
     unlockAudio();
     RiskSeven.music.enterTable();
     syncMusicUi();
@@ -889,13 +892,12 @@
         $("round-end").classList.remove("show");
         if (!state.game || state.game.stopped) return;
         $("log").innerHTML = "";
-        await showRoundCurtain(snap.round + 1);
       },
     });
 
     state.game = game;
-    showRoundCurtain(1)
-      .then(() => game.playMatch())
+    resetFxMemory();
+    game.playMatch()
       .then(() => {
         if (game.winners.length) showWinner();
       })
@@ -930,6 +932,26 @@
 
   function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
+  }
+
+  function resetFxMemory() {
+    state.seenFx = {};
+    state.lastCurtain = 0;
+    state.lastFx = null;
+    state.heldSnap = null;
+    state.fxUntil = 0;
+    if (state.fxFlush) {
+      clearTimeout(state.fxFlush);
+      state.fxFlush = null;
+    }
+  }
+
+  function fxSeen(key) {
+    if (!state.seenFx) state.seenFx = {};
+    if (state.seenFx[key]) return true;
+    state.seenFx[key] = true;
+    state.lastFx = key;
+    return false;
   }
 
   function holdFx(ms) {
@@ -973,13 +995,14 @@
       state.lastLog = last.t;
       if (last.kind === "freeze") RiskSeven.sfx.freeze();
       if (last.kind === "win") RiskSeven.sfx.win();
-      if (last.kind === "shuffle") flashShuffle();
+      if (last.kind === "shuffle" && !fxSeen("shuffle:" + last.t)) flashShuffle();
     }
     maybeFlashSpecial(snap);
     maybeFlashBust(prev, snap);
     maybeFlashSeven(prev, snap);
     maybeFlashSave(prev, snap);
-    if (snap.round && snap.round !== prevRound && snap.phase === "dealing") {
+    if (snap.round && snap.round !== prevRound && snap.phase === "dealing" && state.lastCurtain !== snap.round) {
+      state.lastCurtain = snap.round;
       showRoundCurtain(snap.round);
     }
     if (snap.phase === "roundEnd") showRoundEnd();
@@ -1015,8 +1038,7 @@
     const card = holder.staging;
     if (card.type !== "action" && card.type !== "modifier") return;
     const key = `${snap.round}:${holder.id}:${card.id}`;
-    if (state.lastFx === key) return;
-    state.lastFx = key;
+    if (fxSeen(key)) return;
     flashSpecial(holder, card);
   }
 
@@ -1066,8 +1088,7 @@
     const fx = $("fx");
     if (!fx) return;
     const key = `seven:${state.snap.round}:${player.id}`;
-    if (state.lastFx === key) return;
-    state.lastFx = key;
+    if (fxSeen(key)) return;
     fx.className = "show kind-seven";
     $("fx-name").textContent = "SEVEN";
     $("fx-who").textContent = `${player.name}  ·  +15`;
@@ -1123,8 +1144,7 @@
     const fx = $("fx");
     if (!fx) return;
     const key = `save:${state.snap.round}:${player.id}:${state.snap.log.length}`;
-    if (state.lastFx === key) return;
-    state.lastFx = key;
+    if (fxSeen(key)) return;
     fx.className = "show kind-secondChance kind-save";
     $("fx-name").textContent = "SAVED";
     $("fx-who").textContent = `${player.name} · Spare`;
@@ -1172,8 +1192,7 @@
     const fx = $("fx");
     if (!fx) return;
     const key = `bust:${state.snap.round}:${player.id}`;
-    if (state.lastFx === key) return;
-    state.lastFx = key;
+    if (fxSeen(key)) return;
     fx.className = "show kind-bust";
     $("fx-name").textContent = "BUST";
     $("fx-who").textContent = player.name;
