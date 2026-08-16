@@ -9,6 +9,7 @@
     lastFx: null,
     seenFx: {},
     lastCurtain: 0,
+    curtainBusy: 0,
     debug: false,
     mode: "local",
     myId: "you",
@@ -919,15 +920,20 @@
 
   async function showRoundCurtain(round) {
     const el = $("round-curtain");
-    if (!el) return;
+    if (!el || state.curtainBusy === round) return;
+    state.curtainBusy = round;
     $("curtain-label").textContent = `Round ${round}`;
+    el.classList.remove("show");
     el.hidden = false;
+    void el.offsetWidth;
     el.classList.add("show");
-    await sleep(80);
+    holdFx(1800);
     RiskSeven.sfx.newRound();
-    await sleep(1700);
+    await sleep(1800);
+    if (state.curtainBusy !== round) return;
     el.classList.remove("show");
     el.hidden = true;
+    state.curtainBusy = 0;
   }
 
   function sleep(ms) {
@@ -937,6 +943,7 @@
   function resetFxMemory() {
     state.seenFx = {};
     state.lastCurtain = 0;
+    state.curtainBusy = 0;
     state.lastFx = null;
     state.heldSnap = null;
     state.fxUntil = 0;

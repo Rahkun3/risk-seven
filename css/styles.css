@@ -980,9 +980,10 @@ button, input, select { font-family: inherit; }
   place-items: center;
   background: rgba(4, 12, 9, 0.72);
   pointer-events: none;
+  opacity: 0;
 }
 #round-curtain[hidden] { display: none; }
-#round-curtain.show { animation: curtain-in 2.5s ease; }
+#round-curtain.show { animation: curtain-in 1.8s ease forwards; }
 .curtain-kicker {
   position: absolute;
   top: 38%;
