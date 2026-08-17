@@ -20,40 +20,34 @@ Then open http://127.0.0.1:8765/
 
 Template: [`unraid/risk-seven.xml`](unraid/risk-seven.xml)
 
-You only set **WebUI Port** (any free host port). The app listens on 8765 inside the container. There is no `PORT` variable to fill in.
+There is no `PORT` variable. Set **WebUI Port** only: the **same free number** for host and container (Unraid shows two boxes on that one setting).
 
 **Docker → Add Container**
 
 | Field | Value |
 |---|---|
-| Name | `risk-seven` |
-| Repository | `ghcr.io/rahkun3/risk-seven:latest` |
+| Name | `risk-seven` (or `risk-seven-dev` for a second copy) |
+| Repository | `ghcr.io/rahkun3/risk-seven:dev` while on this branch, or `:latest` after a merge to `main` |
 | Network Type | Bridge |
-| WebUI Port | **(any free host port)** → container 8765 |
-| Extra Parameters | `--restart=unless-stopped` |
+| WebUI Port | Host **N** → Container **N** (same free port) |
+| Extra Parameters | `--restart=unless-stopped --cap-add=NET_ADMIN` |
 
-Or add the template and fill **WebUI Port**.
+Open `http://UNRAID_IP:N/`
 
-Open `http://UNRAID_IP:YOUR_PORT/`
-
-Use **Bridge** network.
+To run another copy at the same time, add a second container with a **different name** and a **different port** (again the same number on both sides).
 
 ### Cloudflare tunnel
-
-In Zero Trust → your tunnel → Public hostname:
 
 | Field | Value |
 |---|---|
 | Type | HTTP (not HTTPS) |
-| URL | `http://UNRAID_LAN_IP:YOUR_HOST_PORT` |
-
-Example: Unraid `192.168.1.50`, WebUI Port `9010` → `http://192.168.1.50:9010`
+| URL | `http://UNRAID_LAN_IP:N` |
 
 Do not use `localhost`, the container name, or `https://` to the container.
 
 ### Reverse proxy
 
-Point Nginx Proxy Manager, SWAG, or Caddy at the host port you chose. WebSockets must be allowed.
+Point Nginx Proxy Manager, SWAG, or Caddy at port **N**. WebSockets must be allowed.
 
 ```nginx
 proxy_http_version 1.1;
@@ -67,7 +61,7 @@ Optional: `PUBLIC_URL=https://riskseven.yourdomain.com`
 
 ## Images
 
-Pushing `main` publishes `ghcr.io/rahkun3/risk-seven:latest`.
+Pushing `dev` publishes `ghcr.io/rahkun3/risk-seven:dev`. Pushing `main` publishes `:latest`.
 
 The package must be **public** or Unraid cannot pull it: GitHub → Packages → `risk-seven` → Package settings.
 
@@ -75,13 +69,14 @@ The package must be **public** or Unraid cannot pull it: GitHub → Packages →
 
 ```bash
 HOST_PORT=9010 docker compose up -d
+HOST_PORT=9011 CONTAINER_NAME=risk-seven-dev docker compose up -d
 ```
 
 ## Environment
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | `8765` | Listen port **inside** the container |
+| `PORT` | `8765` | Listen port **inside** the container (traffic on the published port is sent here) |
 | `HOST` | `0.0.0.0` | Bind address |
 | `PUBLIC_URL` | empty | Public https origin, if any |
 | `RECONNECT_MS` | `20000` | Time to reclaim a seat after disconnect |

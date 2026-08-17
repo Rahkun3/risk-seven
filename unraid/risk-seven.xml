@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>risk-seven</Name>
-  <Repository>ghcr.io/rahkun3/risk-seven:latest</Repository>
+  <Repository>ghcr.io/rahkun3/risk-seven:dev</Repository>
   <Registry>https://ghcr.io/</Registry>
   <Network>bridge</Network>
   <MyIP/>
@@ -9,17 +9,17 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/Rahkun3/risk-seven</Support>
   <Project>https://github.com/Rahkun3/risk-seven</Project>
-  <Overview>Risk Seven table. First to 200. Set WebUI Port to any free port on this Unraid box. For a Cloudflare tunnel use http://UNRAID_LAN_IP:that_port (HTTP, not HTTPS).</Overview>
+  <Overview>Risk Seven table. First to 200. Set WebUI Port — use the same free number for host and container. Add another container with a different port to run a second copy. Cloudflare: http://UNRAID_LAN_IP:that_port (HTTP).</Overview>
   <Category>Game:</Category>
-  <WebUI>http://[IP]:[PORT:8765]/</WebUI>
+  <WebUI>http://[IP]:[PORT]/</WebUI>
   <TemplateURL/>
   <Icon>https://raw.githubusercontent.com/Rahkun3/risk-seven/main/assets/logo.jpg</Icon>
-  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <ExtraParams>--restart=unless-stopped --cap-add=NET_ADMIN</ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DonateText/>
   <DonateLink/>
   <Requires/>
-  <Config Name="WebUI Port" Target="8765" Default="" Mode="tcp" Description="Host port. Required. Pick any free port on this Unraid box." Type="Port" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="WebUI Port" Target="" Default="" Mode="tcp" Description="Host port and container port. Required. Put the same free port in both boxes so you can run more than one copy." Type="Port" Display="always" Required="true" Mask="false"></Config>
   <Config Name="PUBLIC_URL" Target="PUBLIC_URL" Default="" Mode="" Description="Optional. Public https origin if you use a reverse proxy, e.g. https://riskseven.example.com" Type="Variable" Display="always" Required="false" Mask="false"/>
 </Container>
