@@ -4,10 +4,8 @@ services:
     build: .
     container_name: ${CONTAINER_NAME:-risk-seven}
     restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
     ports:
-      - "${HOST_PORT:?Set HOST_PORT to a free host port}:${HOST_PORT}"
+      - "${HOST_PORT:?Set HOST_PORT to a free host port}:8765"
     environment:
       HOST: "0.0.0.0"
       PORT: "8765"
