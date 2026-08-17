@@ -1,11 +1,11 @@
 services:
   risk-seven:
-    image: ghcr.io/${GITHUB_USER:-yourname}/risk-seven:latest
+    image: ghcr.io/${GITHUB_USER:-rahkun3}/risk-seven:latest
     build: .
     container_name: risk-seven
     restart: unless-stopped
     ports:
-      - "8765:8765"
+      - "${HOST_PORT:?Set HOST_PORT to a free host port}:8765"
     environment:
       HOST: "0.0.0.0"
       PORT: "8765"
