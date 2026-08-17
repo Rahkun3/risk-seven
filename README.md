@@ -20,7 +20,11 @@ Then open http://127.0.0.1:8765/
 
 Template: [`unraid/risk-seven.xml`](unraid/risk-seven.xml)
 
-There is no `PORT` variable. Set **WebUI Port** only: the **same free number** for host and container (Unraid shows two boxes on that one setting).
+There is no `PORT` variable. **Do not add a port.** Use the template’s **Port** setting only.
+
+Leave the **WebUI** line at the top of Add Container alone (`http://[IP]:[PORT]/`). That is the clickable link, not where you pick the port.
+
+Unraid shows two boxes on **Port**. Put the **same free number** in both (host and container).
 
 **Docker → Add Container**
 
@@ -29,7 +33,8 @@ There is no `PORT` variable. Set **WebUI Port** only: the **same free number** f
 | Name | `risk-seven` (or `risk-seven-dev` for a second copy) |
 | Repository | `ghcr.io/rahkun3/risk-seven:dev` while on this branch, or `:latest` after a merge to `main` |
 | Network Type | Bridge |
-| WebUI Port | Host **N** → Container **N** (same free port) |
+| WebUI | leave as `http://[IP]:[PORT]/` |
+| Port | Host **N** and Container **N** (same free port). Do not add another. |
 | Extra Parameters | `--restart=unless-stopped --cap-add=NET_ADMIN` |
 
 Open `http://UNRAID_IP:N/`

@@ -9,7 +9,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/Rahkun3/risk-seven</Support>
   <Project>https://github.com/Rahkun3/risk-seven</Project>
-  <Overview>Risk Seven table. First to 200. Set WebUI Port — use the same free number for host and container. Add another container with a different port to run a second copy. Cloudflare: http://UNRAID_LAN_IP:that_port (HTTP).</Overview>
+  <Overview>Risk Seven table. First to 200. Do not add another port. Use only the Port setting below: put the same free number in host and container. Leave the WebUI URL at the top unchanged. A second copy is a second container with a different name and port.</Overview>
   <Category>Game:</Category>
   <WebUI>http://[IP]:[PORT]/</WebUI>
   <TemplateURL/>
@@ -20,6 +20,6 @@
   <DonateText/>
   <DonateLink/>
   <Requires/>
-  <Config Name="WebUI Port" Target="" Default="" Mode="tcp" Description="Host port and container port. Required. Put the same free port in both boxes so you can run more than one copy." Type="Port" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Port" Target="" Default="" Mode="tcp" Description="The only port you set. Put the same free number in Host Port and Container Port. Do not add another port. Do not edit the WebUI URL at the top of the form." Type="Port" Display="always" Required="true" Mask="false"></Config>
   <Config Name="PUBLIC_URL" Target="PUBLIC_URL" Default="" Mode="" Description="Optional. Public https origin if you use a reverse proxy, e.g. https://riskseven.example.com" Type="Variable" Display="always" Required="false" Mask="false"/>
 </Container>
